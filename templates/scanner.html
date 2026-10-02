@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEKU Smart Gate | Terminal</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #040d08;
+            color: #e2e8f0;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .txt-green {
+            color: #006b35;
+        }
+
+        .bg-glass {
+            background: rgba(10, 25, 15, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hero-panel {
+            border: 1px solid rgba(0, 107, 53, 0.4);
+            box-shadow: 0 0 15px rgba(0,107,53,0.2);
+        }
+
+        #reader {
+            border: none !important;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #000;
+            width: 100% !important;
+        }
+
+        #reader video {
+            border-radius: 1rem;
+            object-fit: cover;
+            width: 100% !important;
+        }
+
+        .scan-line {
+            height: 3px;
+            background: linear-gradient(
+                to right,
+                transparent,
+                #00ff80,
+                transparent
+            );
+            position: absolute;
+            width: 100%;
+            top: 0;
+            animation: scan 2s infinite ease-in-out;
+            z-index: 10;
+            box-shadow: 0 0 15px #00ff80;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 0%;
+                opacity: 0.2;
+            }
+
+            50% {
+                top: 50%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 100%;
+                opacity: 0.2;
+            }
+        }
+
+        .granted {
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .denied {
+            color: #ef4444;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .log-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        #overlay {
+            transition: opacity 0.4s ease;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+    <!-- HEADER -->
+    <header class="p-4 flex justify-between items-center bg-glass sticky top-0 z-50">
+
+        <div class="flex items-center space-x-3">
+
+            <img
+                src="{{ url_for('static', filename='seku_logo.png') }}"
+                class="w-10 h-10 object-contain"
+                onerror="this.src='https://via.placeholder.com/40?text=S'"
+            >
+
+            <div>
+                <h1 class="text-xl font-black tracking-tighter txt-green">
+                    SEKU<span class="text-white">SMART</span>
+                </h1>
+
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                    Main Gate Terminal
+                </p>
+            </div>
+
+        </div>
+
+        <div class="flex items-center gap-4">
+
+            <div
+                id="clock"
+                class="font-mono text-yellow-500 font-bold bg-black/50 px-4 py-2 rounded-lg border border-white/10"
+            >
+                --:--:--
+            </div>
+
+            <a
+                href="{{ url_for('portal') }}"
+                class="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+            >
+                <i class="fas fa-power-off mr-2"></i>
+                EXIT
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- SCANNER -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <div class="bg-glass hero-panel p-6 rounded-3xl relative overflow-hidden">
+
+                <div class="flex justify-between items-center mb-4">
+
+                    <h2 class="text-xs font-bold tracking-widest text-emerald-400 uppercase italic">
+
+                        <i
+                            id="scan-icon"
+                            class="fas fa-circle-notch fa-spin mr-2"
+                        ></i>
+
+                        <span id="scan-status">
+                            System Ready
+                        </span>
+
+                    </h2>
+
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded">
+                        LIVE
+                    </span>
+
+                </div>
+
+
+                <div class="relative rounded-2xl bg-black aspect-square overflow-hidden flex items-center justify-center shadow-inner">
+
+                    <div
+                        id="visual-line"
+                        class="scan-line hidden"
+                    ></div>
+
+                    <div
+                        id="reader"
+                        class="w-full"
+                    ></div>
+
+
+                    <!-- CAMERA OVERLAY -->
+                    <div
+                        id="overlay"
+                        class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/95 p-6 text-center"
+                    >
+
+                        <div class="bg-emerald-500/10 p-6 rounded-full mb-4 border border-emerald-500/20">
+
+                            <i
+                                id="cam-icon"
+                                class="fas fa-camera text-4xl text-emerald-500"
+                            ></i>
+
+                        </div>
+
+                        <p
+                            id="err-hint"
+                            class="text-gray-400 text-xs mb-4"
+                        >
+                            Initializing Back Camera...
+                        </p>
+
+                        <button
+                            id="start-btn"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transform active:scale-95 transition-all"
+                        >
+                            ACTIVATE SCANNER
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RESULTS -->
+        <div class="lg:col-span-7 space-y-6">
+
+            <!-- VERIFICATION CARD -->
+            <div
+                id="res-card"
+                class="bg-glass rounded-3xl overflow-hidden hidden transform transition-all duration-300 scale-95 opacity-0"
+            >
+
+                <!-- RESULT BORDER -->
+                <div
+                    id="res-border"
+                    class="h-2 w-full transition-all"
+                ></div>
+
+
+                <!-- RESULT CONTENT -->
+                <div class="p-8">
+
+                    <!-- STATUS -->
+                    <div class="flex items-center justify-between mb-6">
+
+                        <div>
+                            <h3
+                                id="res-title"
+                                class="text-sm font-black uppercase tracking-[0.3em] mb-1"
+                            >
+                                ---
+                            </h3>
+
+                            <p class="text-xs text-gray-500 uppercase tracking-widest">
+                                Student Verification
+                            </p>
+                        </div>
+
+                        <i
+                            id="result-icon"
+                            class="fas fa-user-check text-3xl"
+                        ></i>
+
+                    </div>
+
+
+                    <!-- STUDENT INFORMATION -->
+                    <div class="flex flex-col sm:flex-row gap-7 items-center sm:items-start">
+
+                        <!-- PASSPORT -->
+                        <div class="flex-shrink-0">
+
+                            <div class="relative">
+
+                                <img
+                                    id="res-img"
+                                    src=""
+                                    alt="Student Passport"
+                                    class="w-36 h-44 rounded-2xl object-cover border-2 border-white/10 shadow-2xl bg-black"
+                                >
+
+                                <div
+                                    class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-center rounded-lg py-1"
+                                >
+                                    <span class="text-[9px] text-gray-300 uppercase tracking-widest">
+                                        Passport
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- DETAILS -->
+                        <div class="flex-1 w-full">
+
+                            <!-- NAME -->
+                            <div class="mb-4">
+
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">
+                                    Full Name
+                                </p>
+
+                                <h2
+                                    id="res-name"
+                                    class="text-2xl sm:text-3xl font-bold text-white"
+                                >
+                                    ---
+                                </h2>
+
+                            </div>
+
+
+                            <!-- SCHOOL -->
+                            <div class="mb-4">
+
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">
+                                    School
+                                </p>
+
+                                <p
+                                    id="res-school"
+                                    class="text-lg font-semibold text-white"
+                                >
+                                    ---
+                                </p>
+
+                            </div>
+
+
+                            <!-- COURSE -->
+                            <div class="mb-4">
+
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">
+                                    Course
+                                </p>
+
+                                <p
+                                    id="res-course"
+                                    class="text-lg font-semibold text-white"
+                                >
+                                    ---
+                                </p>
+
+                            </div>
+
+
+                            <!-- REGISTRATION NUMBER -->
+                            <div>
+
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">
+                                    Registration Number
+                                </p>
+
+                                <p
+                                    id="res-reg"
+                                    class="font-mono text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-md inline-block text-sm"
+                                >
+                                    ---
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RECENT LOGS -->
+            <div class="bg-glass p-6 rounded-3xl">
+
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+                    Recent Access Events
+                </h3>
+
+                <div
+                    class="space-y-3"
+                    id="log-list"
+                >
+
+                    <p
+                        id="empty-msg"
+                        class="text-center text-gray-600 text-sm italic py-4"
+                    >
+                        Waiting for incoming scans...
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        // ============================================
+        // CLOCK
+        // ============================================
+
+        function updateTime() {
+
+            const clock = document.getElementById('clock');
+
+            if (clock) {
+                clock.innerText = new Date().toLocaleTimeString('en-GB');
+            }
+
+        }
+
+        setInterval(updateTime, 1000);
+
+        updateTime();
+
+
+        // ============================================
+        // SCANNER VARIABLES
+        // ============================================
+
+        let isBusy = false;
+        let lastCode = "";
+        let lastTime = 0;
+
+        const html5QrCode = new Html5Qrcode("reader");
+
+
+        // ============================================
+        // START SCANNER
+        // ============================================
+
+        async function startScanner() {
+
+            const overlay = document.getElementById('overlay');
+            const status = document.getElementById('scan-status');
+            const line = document.getElementById('visual-line');
+            const hint = document.getElementById('err-hint');
+
+            try {
+
+                const devices = await Html5Qrcode.getCameras();
+
+                if (devices && devices.length) {
+
+                    let backCamera = devices.find(device =>
+                        device.label.toLowerCase().includes('back') ||
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment')
+                    );
+
+                    let cameraId = backCamera
+                        ? backCamera.id
+                        : devices[devices.length - 1].id;
+
+
+                    await html5QrCode.start(
+
+                        cameraId,
+
+                        {
+                            fps: 20,
+                            qrbox: {
+                                width: 250,
+                                height: 250
+                            },
+                            aspectRatio: 1.0
+                        },
+
+                        onScanSuccess
+
+                    );
+
+
+                    overlay.style.opacity = '0';
+
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 400);
+
+                    line.classList.remove('hidden');
+
+                    status.innerText = "BACK SCANNER ACTIVE";
+
+                }
+
+            } catch (err) {
+
+                status.innerText = "AUTH ERROR";
+
+                hint.innerText =
+                    "Switch to HTTPS or localhost to use Back Camera.";
+
+                hint.classList.add('text-red-400');
+
+            }
+
+        }
+
+
+        // ============================================
+        // ACTIVATE BUTTON
+        // ============================================
+
+        document
+            .getElementById('start-btn')
+            .addEventListener('click', startScanner);
+
+
+        // ============================================
+        // QR SCAN SUCCESS
+        // ============================================
+
+        function onScanSuccess(text) {
+
+            const now = Date.now();
+
+
+            // KEEPING YOUR ORIGINAL SCAN PROTECTION LOGIC
+
+            if (
+                isBusy ||
+                (text === lastCode && (now - lastTime) < 4000)
+            ) {
+                return;
+            }
+
+
+            isBusy = true;
+
+            lastCode = text;
+
+            lastTime = now;
+
+
+            document.getElementById('scan-status').innerText =
+                "VERIFYING...";
+
+            document.getElementById('scan-icon').className =
+                "fas fa-sync fa-spin mr-2 text-yellow-500";
+
+
+            // ============================================
+            // SEND REGISTRATION NUMBER TO FLASK
+            // ============================================
+
+            fetch('/verify', {
+
+                method: 'POST',
+
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+
+                body: JSON.stringify({
+                    reg_number: text
+                })
+
+            })
+
+            .then(res => res.json())
+
+            .then(data => {
+
+                showResult(data, text);
+
+            })
+
+            .catch(() => {
+
+                showResult(
+                    {
+                        status: "error",
+                        name: "Network Error"
+                    },
+                    text
+                );
+
+            })
+
+            .finally(() => {
+
+                setTimeout(() => {
+
+                    isBusy = false;
+
+                    document.getElementById('scan-status').innerText =
+                        "BACK SCANNER ACTIVE";
+
+                    document.getElementById('scan-icon').className =
+                        "fas fa-circle-notch fa-spin mr-2 text-emerald-400";
+
+                }, 2500);
+
+            });
+
+        }
+
+
+        // ============================================
+        // SHOW VERIFICATION RESULT
+        // ============================================
+
+        function showResult(data, reg) {
+
+            const card = document.getElementById('res-card');
+
+            card.classList.remove(
+                'hidden',
+                'scale-95',
+                'opacity-0'
+            );
+
+            card.classList.add(
+                'scale-100',
+                'opacity-100'
+            );
+
+
+            const titleEl =
+                document.getElementById('res-title');
+
+            const borderEl =
+                document.getElementById('res-border');
+
+            const resultIcon =
+                document.getElementById('result-icon');
+
+
+            // ============================================
+            // SUCCESS
+            // ============================================
+
+            if (data.status === "success") {
+
+                borderEl.className =
+                    "h-2 w-full bg-emerald-500 shadow-[0_0_15px_#10b981]";
+
+                titleEl.innerText =
+                    "ACCESS GRANTED";
+
+                titleEl.className =
+                    "text-sm font-black tracking-[0.3em] mb-1 granted";
+
+                resultIcon.className =
+                    "fas fa-circle-check text-3xl text-emerald-500";
+
+
+                // NAME
+                document.getElementById('res-name').innerText =
+                    data.name || "Unknown Student";
+
+
+                // REGISTRATION NUMBER
+                document.getElementById('res-reg').innerText =
+                    data.reg_number || reg;
+
+
+                // SCHOOL
+                document.getElementById('res-school').innerText =
+                    data.school || "School information unavailable";
+
+
+                // COURSE
+                document.getElementById('res-course').innerText =
+                    data.course || "Course information unavailable";
+
+
+                // ============================================
+                // PASSPORT IMAGE
+                // ============================================
+
+                const passport =
+                    data.passport ||
+                    data.passport_url ||
+                    data.passport_photo ||
+                    data.photo ||
+                    "";
+
+
+                if (passport) {
+
+                    document.getElementById('res-img').src =
+                        passport;
+
+                } else {
+
+                    document.getElementById('res-img').src =
+                        "https://via.placeholder.com/150/006b35/ffffff?text=PHOTO";
+
+                }
+
+
+                // UPDATE ACCESS LOG
+                updateLogs(
+                    data.name || "Unknown Student",
+                    data.reg_number || reg,
+                    true
+                );
+
+            }
+            
+
+
+            // ============================================
+            // DENIED
+            // ============================================
+
+            else {
+
+                borderEl.className =
+                    "h-2 w-full bg-red-600 shadow-[0_0_15px_#ef4444]";
+
+                titleEl.innerText =
+                    "ACCESS DENIED";
+
+                titleEl.className =
+                    "text-sm font-black tracking-[0.3em] mb-1 denied";
+
+                resultIcon.className =
+                    "fas fa-circle-xmark text-3xl text-red-500";
+
+
+                document.getElementById('res-name').innerText =
+                    "INVALID CREDENTIALS";
+
+
+                document.getElementById('res-school').innerText =
+                    "---";
+
+
+                document.getElementById('res-course').innerText =
+                    "---";
+
+
+                document.getElementById('res-reg').innerText =
+                    reg;
+
+
+                document.getElementById('res-img').src =
+                    "https://via.placeholder.com/150/900/fff?text=ERR";
+
+
+                updateLogs(
+                    "Unauthorized",
+                    reg,
+                    false
+                );
+
+            }
+
+
+            // ============================================
+            // HIDE RESULT AFTER 6 SECONDS
+            // ============================================
+
+            setTimeout(() => {
+
+                card.classList.add(
+                    'scale-95',
+                    'opacity-0'
+                );
+
+                setTimeout(() => {
+
+                    card.classList.add('hidden');
+
+                }, 300);
+
+            }, 1200);
+
+        }
+
+
+        // ============================================
+        // UPDATE ACCESS LOGS
+        // ============================================
+
+        function updateLogs(name, reg, ok) {
+
+            const list =
+                document.getElementById('log-list');
+
+            const msg =
+                document.getElementById('empty-msg');
+
+
+            if (msg) {
+                msg.remove();
+            }
+
+
+            const time =
+                new Date().toLocaleTimeString(
+                    [],
+                    {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }
+                );
+
+
+            const html = `
+
+                <div class="log-item flex justify-between items-center p-4 rounded-2xl bg-white/5 border-l-4 ${ok ? 'border-l-emerald-500' : 'border-l-red-500'}">
+
+                    <div class="flex flex-col">
+
+                        <span class="text-sm font-bold text-white">
+                            ${name}
+                        </span>
+
+                        <span class="font-mono text-[10px] text-gray-500">
+                            ${reg}
+                        </span>
+
+                    </div>
+
+                    <div class="text-right">
+
+                        <span class="text-[10px] text-gray-400 font-mono block">
+                            ${time}
+                        </span>
+
+                        <span class="text-[9px] ${ok ? 'text-emerald-500' : 'text-red-500'} font-bold uppercase">
+                            ${ok ? 'IN' : 'FAILED'}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            list.insertAdjacentHTML(
+                'afterbegin',
+                html
+            );
+
+
+            if (list.children.length > 5) {
+
+                list.lastElementChild.remove();
+
+            }
+
+        }
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEKU Smart Gate | Access Portal</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='seku_logo.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --seku-green: #006633;
+            --seku-green-dark: #004d26;
+            --seku-yellow: #ffcc00;
+            --bg-overlay: rgba(0, 0, 0, 0.55);
+            --text-color: #ffffff;
+            --subtext-color: #e0e0e0;
+        }
+
+        [data-theme="dark"] {
+            --bg-overlay: rgba(0, 0, 0, 0.8);
+            --text-color: #e8f5e9;
+            --subtext-color: #b0bec5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(var(--bg-overlay), var(--bg-overlay)), 
+                        url("{{ url_for('static', filename='seku_gate.png') }}") no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        header {
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            border-bottom: 3px solid var(--seku-green);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand-group img {
+            height: 55px;
+            border-radius: 6px;
+            border: 2px solid var(--seku-green);
+            background: #fff;
+        }
+
+        .brand-text h1 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--seku-yellow);
+            font-style: italic;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .theme-switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--seku-green); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .info-link {
+            background: var(--seku-green);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--seku-yellow);
+            transition: 0.2s ease;
+        }
+
+        .info-link:hover {
+            background: var(--seku-green-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Content (No Glassmorphism Box) */
+        .hero-section {
+            min-height: calc(100vh - 85px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--seku-yellow);
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+            margin-bottom: 35px;
+        }
+
+        /* Adjacent Side-by-Side Action Buttons */
+        .adjacent-buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            max-width: 650px;
+            width: 100%;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: rgba(0, 102, 51, 0.9);
+            border: 2px solid var(--seku-green);
+            padding: 20px 25px;
+            border-radius: 12px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        }
+
+        .action-btn i {
+            font-size: 1.4rem;
+            color: var(--seku-yellow);
+        }
+
+        .action-btn:hover {
+            background: var(--seku-green-dark);
+            border-color: var(--seku-yellow);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 102, 51, 0.5);
+        }
+
+        .live-status {
+            margin-top: 40px;
+            display: flex;
+            gap: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 30px;
+            border-radius: 30px;
+            border: 1px solid var(--seku-green);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .status-item span.val {
+            font-weight: 700;
+            color: var(--seku-yellow);
+        }
+
+        /* System Info Section (Viewport Height Fit) */
+        .info-section {
+            min-height: calc(100vh - 85px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background: rgba(0, 30, 15, 0.92);
+            border-top: 3px solid var(--seku-green);
+        }
+
+        .info-container {
+            max-width: 950px;
+            width: 100%;
+        }
+
+        .info-container h2 {
+            color: var(--seku-yellow);
+            font-size: 2rem;
+            margin-bottom: 25px;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 3px solid var(--seku-green);
+            display: inline-block;
+            padding-bottom: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background: rgba(0, 102, 51, 0.25);
+            border: 2px solid var(--seku-green);
+            padding: 30px 20px;
+            border-radius: 14px;
+            text-align: center;
+            transition: 0.3s ease;
+        }
+
+        .info-box:hover {
+            background: rgba(0, 102, 51, 0.45);
+            border-color: var(--seku-yellow);
+            transform: translateY(-5px);
+        }
+
+        .info-box i {
+            font-size: 2.2rem;
+            color: var(--seku-yellow);
+            margin-bottom: 15px;
+        }
+
+        .info-box h3 {
+            font-size: 1.15rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .info-box p {
+            font-size: 0.85rem;
+            color: var(--subtext-color);
+            line-height: 1.6;
+        }
+
+        footer {
+            background: #000000;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #cccccc;
+            border-top: 1px solid var(--seku-green);
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 15px 20px; flex-direction: column; gap: 15px; }
+            footer { padding: 15px 20px; flex-direction: column; gap: 10px; text-align: center; }
+            .adjacent-buttons { flex-direction: column; width: 100%; }
+            .hero-title { font-size: 1.6rem; }
+            .live-status { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <header>
+        <div class="brand-group">
+            <img src="{{ url_for('static', filename='seku_logo.png') }}" alt="SEKU Logo">
+            <div class="brand-text">
+                <h1>South Eastern Kenya University</h1>
+                <p>Arid to Green Transforming lives</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="theme-switch-container">
+                <i class="fas fa-sun" style="font-size:0.85rem; color: #f39c12;"></i>
+                <label class="switch">
+                    <input type="checkbox" id="themeCheckbox" onchange="applyTheme()">
+                    <span class="slider"></span>
+                </label>
+                <i class="fas fa-moon" style="font-size:0.85rem; color: #aab7b8;"></i>
+            </div>
+            <a href="#systemInfo" class="info-link">
+                <i class="fas fa-info-circle"></i> System Info
+            </a>
+        </div>
+    </header>
+
+    <div class="hero-section">
+        <h2 class="hero-title">SMART GATE ACCESS PORTAL</h2>
+        <p class="hero-subtitle">Automated Campus Clearance & Security System</p>
+
+        <div class="adjacent-buttons">
+            <a href="{{ url_for('scanner') }}" class="action-btn">
+                <i class="fas fa-qrcode"></i>
+                <span>Scanner Terminal</span>
+            </a>
+            <a href="{{ url_for('login') }}" class="action-btn">
+                <i class="fas fa-user-shield"></i>
+                <span>Admin Portal</span>
+            </a>
+        </div>
+
+        <div class="live-status">
+            <div class="status-item">
+                <i class="fas fa-signal" style="color: #2ecc71;"></i>
+                <span>Status:</span>
+                <span class="val" style="color: #2ecc71;">ONLINE</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock" style="color: var(--seku-yellow);"></i>
+                <span>Server Time:</span>
+                <span class="val" id="portalClock">--:--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information Section -->
+    <div id="systemInfo" class="info-section">
+        <div class="info-container" style="text-align: center;">
+            <h2>System Information</h2>
+            <div class="info-grid">
+                <div class="info-box">
+                    <i class="fas fa-qrcode"></i>
+                    <h3>QR Code Clearance</h3>
+                    <p>Instant verification for students and staff using real-time QR identification pass scanning at main gate checkpoints.</p>
+                </div>
+                <div class="info-box">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>SEKU Access Control</h3>
+                    <p>Monitors daily campus perimeter entries, verifying student status directly against university active records.</p>
+                </div>
+                <div class="info-box">
+                    <i class="fas fa-database"></i>
+                    <h3>Real-Time Logging</h3>
+                    <p>Maintains secure entries and access timestamps for university security managers and administration audit reports.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div>&copy; 2026 South Eastern Kenya University — Smart Gate Access System</div>
+        <div>Security Division &bull; Operational</div>
+    </footer>
+
+    <script>
+        function applyTheme() {
+            const isDark = document.getElementById('themeCheckbox').checked;
+            const themeName = isDark ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', themeName);
+            localStorage.setItem('seku_theme', themeName);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('portalClock').innerText = now.toLocaleTimeString('en-GB');
+        }
+
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('seku_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.getElementById('themeCheckbox').checked = true;
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        };
+    </script>
+</body>
+</html>

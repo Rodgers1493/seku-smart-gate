@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+
+.env
+.venv/
+venv/
+env/
+
+*.db
+*.sqlite
+instance/
+
+.vscode/
+.idea/
+
+# Java JDK accidentally stored in project
+templates/oracleJdk-27/
+
+# Private student data
+static/passports/
+static/qrcodes/
+templates/static/qrcodes/
+
+# Windows system files
+desktop.ini
